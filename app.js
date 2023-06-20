@@ -55,7 +55,8 @@ const userSchema= new mongoose.Schema({
   email:String,
   password:String,
   googleId:String,
-  githubId:String
+  githubId:String,
+  secret:String
 });
 //const secret="Thisisourlittlesecrete.";
 //userSchema.plugin(encrypt,{secret:secret, encryptFields:["password"]});
@@ -178,14 +179,24 @@ app.get("/register",function(req,res){
 
 //step7 secrets page creation
 app.get("/secrets",function(req,res){
-  if(req.isAuthenticated()){
+  /*  if(req.isAuthenticated()){
     res.render("secrets");
   }
   else{
     res.redirect("/login");       //forcefully login
-  }
-});
+  }  */        //by removing this lines anyuser can see wether it is loged or not
 
+  User.find({"secret":{$ne:null}},function(err,foundUsers){
+    if(err){
+      console.log(err);
+    }
+    else{
+      if(foundUsers){
+        res.render("secrets",{usersWithSecrets:foundUsers});
+      }
+    }
+  });
+});
 
 app.get("/submit",function(req,res){
   if(req.isAuthenticated()){
@@ -194,7 +205,26 @@ app.get("/submit",function(req,res){
   else{
     res.redirect("/login");
   }
-})
+});
+app.post("/submit",function(req,res){
+  const submittedSecret=req.body.secret;
+  console.log(req.user.id);
+
+  User.findById(req.user.id,function(err,foundUser){
+    if(err){
+      console.log(err);
+    }
+    else{
+      if(foundUser){
+        foundUser.secret=submittedSecret;
+        foundUser.save(function(){
+          res.redirect("/secrets");
+        });
+      }
+    }
+  });
+});
+
 
 /*app.get("/logout",function(req,res){
   req.logout();
